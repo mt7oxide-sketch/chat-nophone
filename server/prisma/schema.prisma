@@ -1,0 +1,79 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql"; url = env("DATABASE_URL") }
+
+model User {
+  id           String   @id @default(uuid())
+  handle       String?  @unique
+  displayName  String?
+  avatarUrl    String?
+  about        String?  @db.Text
+  createdAt    DateTime @default(now())
+  credentials  Credential[]
+  devices      Device[]
+  participants Participant[]
+}
+
+model Credential {
+  id           String   @id @default(uuid())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       String
+  passkeyId    String   @unique  // credentialID (base64url)
+  publicKey    Bytes
+  counter      Int      @default(0)
+  transports   String?
+  createdAt    DateTime @default(now())
+}
+
+model Device {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  pushToken String?
+  lastSeen  DateTime?
+}
+
+model Conversation {
+  id            String   @id @default(uuid())
+  type          ConversationType
+  createdAt     DateTime @default(now())
+  messages      Message[]
+  participants  Participant[]
+}
+
+enum ConversationType { dm, group }
+
+model Participant {
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId String
+  user           User        @relation(fields: [userId], references: [id])
+  userId         String
+  role           Role
+  @@id([conversationId, userId])
+}
+
+enum Role { admin, member }
+
+model Message {
+  id             String   @id @default(uuid())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId String
+  sender         User     @relation(fields: [senderId], references: [id])
+  senderId       String
+  cipherText     Bytes
+  msgType        MsgType
+  status         MsgStatus
+  createdAt      DateTime @default(now())
+}
+
+enum MsgType { text, image, audio, file }
+enum MsgStatus { sent, delivered, read }
+
+model Invite {
+  id         String   @id @default(uuid())
+  creator    User     @relation(fields: [creatorId], references: [id])
+  creatorId  String
+  code       String   @unique
+  expiresAt  DateTime?
+  maxUses    Int?
+  usedCount  Int      @default(0)
+}

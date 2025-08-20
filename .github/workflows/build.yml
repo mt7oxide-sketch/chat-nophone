@@ -1,0 +1,54 @@
+name: CI - Build
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.10.5'
+      - name: Install dependencies
+        run: |
+          cd app
+          flutter pub get
+      - name: Build APK (debug)
+        run: |
+          cd app
+          flutter build apk --debug
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: app/build/app/outputs/flutter-apk/app-debug.apk
+
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.10.5'
+      - name: Install deps and build iOS (unsigned)
+        run: |
+          cd app
+          flutter pub get
+          flutter build ipa --export-method ad-hoc || true
+      - name: Upload iOS artifact (unsigned ipa)
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-unsigned-ipa
+          path: app/build/ios/ipa || app/build/ios/ipa/*.ipa || ''
