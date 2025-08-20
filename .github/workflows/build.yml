@@ -8,18 +8,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ جلب ملفات المشروع
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # 2️⃣ إعداد JDK
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 17
 
+      # 3️⃣ التأكد من صلاحيات Gradle Wrapper وتشغيله
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      # 4️⃣ بناء الـ APK
       - name: Build APK
         run: ./gradlew assembleRelease
 
+      # 5️⃣ رفع الـ APK كـ artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
